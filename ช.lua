@@ -197,7 +197,7 @@ Toggle:OnChanged(function(state)
             QName = "City Criminal  [Level 280]"     
             MonName = "City Criminal  [Level 280]"    
             NameText = "3,230,348XP"    
-        elseif level <= 349 then    
+        elseif level <= 399 then    
             QName = "Criminal Master [Level 300]"     
             MonName = "Criminal Master [Level 300]"    
             NameText = "6,451,549XP"    
