@@ -391,16 +391,13 @@ end)
 Options.AutoFarm:SetValue(false)
     
     
-    -- Define global variables with unique names to avoid conflicts
-_G.teleportFarmTasks = {}
-_G.isTeleportFarming = false
-_G.hasTeleportQuest = false
-_G.isTeleportRespawning = false
+    _G.autoFarmTasksV2 = {}
+_G.isAutoFarmingV2 = false
+_G.hasActiveQuestV2 = false  -- เพิ่มตัวแปรเพื่อตรวจสอบว่าเควสต์ของโค้ดที่ 2 อยู่หรือไม่
+_G.isRespawningV2 = false   -- เพิ่มตัวแปรเพื่อติดตามการเกิดใหม่ของโค้ดที่ 2
 
--- Use a different toggle name
-local TeleportToggle = Tabs.Main:AddToggle("TeleportFarm", {Title = "AutoFarm 400+ (Teleport)", Default = false })
-
-TeleportToggle:OnChanged(function(state)
+local ToggleV2 = Tabs.Main:AddToggle("AutoFarmV2", {Title = "AutoFarm 1-350 V2", Default = false })
+ToggleV2:OnChanged(function(state)
     local workspace = game:GetService("Workspace")
     local players = game:GetService("Players")
     local replicatedStorage = game:GetService("ReplicatedStorage")
@@ -408,38 +405,39 @@ TeleportToggle:OnChanged(function(state)
     local chr = localPlayer.Character or localPlayer.CharacterAdded:Wait()
     local enemies = workspace:FindFirstChild("Enemies")
 
-    -- ฟังก์ชันสำหรับหยุด task ทั้งหมด
-    local function stopAllTasks()
-        for _, t in ipairs(_G.teleportFarmTasks) do
+    -- ฟังก์ชันสำหรับหยุด task ทั้งหมดของโค้ดที่ 2
+    local function stopAllTasksV2()
+        for _, t in ipairs(_G.autoFarmTasksV2) do
             if typeof(t) == "thread" then
                 task.cancel(t)
             end
         end
-        table.clear(_G.teleportFarmTasks) -- ล้างรายการ
-        _G.isTeleportFarming = false
-        _G.hasTeleportQuest = false
-        _G.isTeleportRespawning = false
+        table.clear(_G.autoFarmTasksV2) -- ล้างรายการ
+        _G.isAutoFarmingV2 = false
+        _G.hasActiveQuestV2 = false
+        _G.isRespawningV2 = false
     end
 
-    -- ฟังก์ชันเลือกเควสต์ตามเลเวล
-    function chlvTeleport()
+    -- ฟังก์ชันเลือกเควสต์ตามเลเวลสำหรับโค้ดที่ 2
+    function chlvV2()
         local level = localPlayer:FindFirstChild("Level") and localPlayer.Level.Value or 0
         if level <= 14 then
-            TeleportQName = "Thug [Level 5]"
-            TeleportMonName = "Thug [Level 5]"
-            TeleportNameText = "10,926XP"
+            QNameV2 = "Thug [Level 5]"
+            MonNameV2 = "Thug [Level 5]"
+            NameTextV2 = "10,926XP"
         elseif level <= 19 then
-            TeleportQName = "HumonUser [Level 15]"
-            TeleportMonName = "HumonUser [Level 15]"
-            TeleportNameText = "15,656XP"
+            QNameV2 = "HumonUser [Level 15]"
+            MonNameV2 = "HumonUser [Level 15]"
+            NameTextV2 = "15,656XP"
+        -- ต่อไปนี้เป็นการตั้งค่าเควสต์ที่เหมือนกันกับโค้ดแรก
         end
     end
 
-    -- ฟังก์ชันค้นหามอนสเตอร์
-    local function findTeleportTargetMonster()
+    -- ฟังก์ชันค้นหามอนสเตอร์ของโค้ดที่ 2
+    local function findTargetMonsterV2()
         if enemies then
             for _, monster in pairs(enemies:GetChildren()) do
-                if monster.Name == TeleportMonName and monster:FindFirstChild("Humanoid") then
+                if monster.Name == MonNameV2 and monster:FindFirstChild("Humanoid") then
                     local humanoid = monster.Humanoid
                     if humanoid.Health > 0 then
                         return monster
@@ -450,75 +448,76 @@ TeleportToggle:OnChanged(function(state)
         return nil
     end
 
-    -- ฟังก์ชันตรวจสอบสถานะเควสต์
-    local function checkTeleportQuestStatus()
+    -- ฟังก์ชันตรวจสอบสถานะเควสต์ของโค้ดที่ 2
+    local function checkQuestStatusV2()
         if not localPlayer or not localPlayer.PlayerGui then
             return false
         end
 
-        local questGui = localPlayer.PlayerGui:FindFirstChild("QuestGui")    
-        if questGui and questGui:FindFirstChild("QuestTag") and questGui.QuestTag.Visible then    
-            if questGui.QuestTag.EXP.Text == TeleportNameText then    
-                return true -- มีเควสต์ที่ถูกต้อง    
-            else    
-                -- มีเควสต์ที่ไม่ถูกต้อง ต้องยกเลิก    
-                replicatedStorage.Remote.GameEvent:FireServer("QuestCancel")    
-                task.wait(1) -- รอให้การยกเลิกเสร็จสิ้น    
-                return false    
-            end    
-        end    
+        local questGui = localPlayer.PlayerGui:FindFirstChild("QuestGui")      
+        if questGui and questGui:FindFirstChild("QuestTag") and questGui.QuestTag.Visible then      
+            if questGui.QuestTag.EXP.Text == NameTextV2 then      
+                return true -- มีเควสต์ที่ถูกต้อง      
+            else      
+                -- มีเควสต์ที่ไม่ถูกต้อง ต้องยกเลิก      
+                replicatedStorage.Remote.GameEvent:FireServer("QuestCancel")      
+                task.wait(1) -- รอให้การยกเลิกเสร็จสิ้น      
+                return false      
+            end      
+        end      
         return false -- ไม่มีเควสต์
+
     end
 
     -- ฟังก์ชันสำหรับตรวจสอบว่าผู้เล่นตายหรือไม่
-    local function checkTeleportPlayerDeath()
-        while _G.isTeleportFarming do
+    local function checkPlayerDeathV2()
+        while _G.isAutoFarmingV2 do
             task.wait(0.5)
 
             -- ตรวจสอบว่าตัวละครมีอยู่หรือไม่    
             local character = localPlayer.Character    
             if not character then    
-                _G.isTeleportRespawning = true    
+                _G.isRespawningV2 = true    
                 task.wait(1)    
                 continue    
             end    
-            
+
             -- ตรวจสอบว่า Humanoid มีอยู่หรือไม่    
             local humanoid = character:FindFirstChild("Humanoid")    
             if not humanoid then    
-                _G.isTeleportRespawning = true    
+                _G.isRespawningV2 = true    
                 task.wait(1)    
                 continue    
             end    
-            
+
             -- ตรวจสอบว่าตัวละครตายหรือไม่    
             if humanoid.Health <= 0 then    
-                _G.isTeleportRespawning = true    
-                
+                _G.isRespawningV2 = true    
+
                 -- รอให้เกิดใหม่    
                 task.spawn(function()    
                     -- รอให้ตัวละครเกิดใหม่    
                     local newCharacter = localPlayer.CharacterAdded:Wait()    
                     task.wait(3) -- รอให้ตัวละครโหลดเสร็จสมบูรณ์    
-                    _G.isTeleportRespawning = false    
+                    _G.isRespawningV2 = false    
                     chr = newCharacter    
                 end)    
             end    
         end
     end
 
-    -- ฟังก์ชันหลักในการทำงาน
-    local function teleportMainFarmLoop()
-        while _G.isTeleportFarming do
+    -- ฟังก์ชันหลักในการทำงานของโค้ดที่ 2
+    local function mainFarmLoopV2()
+        while _G.isAutoFarmingV2 do
             task.wait(0.1)
-            if not _G.isTeleportFarming then break end
+            if not _G.isAutoFarmingV2 then break end
 
             -- ตรวจสอบว่ากำลังเกิดใหม่หรือไม่    
-            if _G.isTeleportRespawning then    
+            if _G.isRespawningV2 then    
                 task.wait(1)    
                 continue    
             end    
-              
+
             -- ตรวจสอบตัวละคร    
             chr = localPlayer.Character    
             if not chr or not chr:FindFirstChild("HumanoidRootPart") then      
@@ -531,50 +530,50 @@ TeleportToggle:OnChanged(function(state)
                 task.wait(1)    
                 continue    
             end    
-              
+
             -- ตรวจสอบเควสต์ปัจจุบัน      
-            chlvTeleport() -- อัพเดตข้อมูลเควสต์ตามเลเวล      
-              
+            chlvV2() -- อัพเดตข้อมูลเควสต์ตามเลเวล      
+
             -- ตรวจสอบว่ามีเควสต์อยู่หรือไม่      
-            _G.hasTeleportQuest = checkTeleportQuestStatus()      
-              
+            _G.hasActiveQuestV2 = checkQuestStatusV2()      
+
             -- ถ้าไม่มีเควสต์ ให้ไปรับก่อน      
-            if not _G.hasTeleportQuest then      
-                      
-                if TeleportQName == "" then       
+            if not _G.hasActiveQuestV2 then      
+
+                if QNameV2 == "" then       
                     task.wait(1)      
                     continue       
                 end      
-              
+
                 -- ตรวจสอบว่า NPC มีอยู่      
-                if not workspace:FindFirstChild("HitboxClick") or not workspace.HitboxClick:FindFirstChild(TeleportQName) then      
+                if not workspace:FindFirstChild("HitboxClick") or not workspace.HitboxClick:FindFirstChild(QNameV2) then      
                     task.wait(1)      
                     continue      
                 end      
-              
+
                 -- วาร์ปไปหา NPC      
                 if chr and chr:FindFirstChild("HumanoidRootPart") then    
-                    chr.HumanoidRootPart.CFrame = workspace.HitboxClick[TeleportQName].CFrame      
+                    chr.HumanoidRootPart.CFrame = workspace.HitboxClick[QNameV2].CFrame      
                     task.wait(1) -- รอเพื่อให้โหลดเสร็จสิ้น      
-                        
+
                     -- รับเควสต์      
-                    replicatedStorage.Remote.GameEvent:FireServer("Quest", TeleportQName)      
+                    replicatedStorage.Remote.GameEvent:FireServer("Quest", QNameV2)      
                     task.wait(1) -- รอให้การรับเควสต์เสร็จสิ้น      
-                end    
-              
+                end      
+
                 -- ตรวจสอบว่ารับเควสต์สำเร็จหรือไม่      
-                _G.hasTeleportQuest = checkTeleportQuestStatus()      
-                if not _G.hasTeleportQuest then      
+                _G.hasActiveQuestV2 = checkQuestStatusV2()      
+                if not _G.hasActiveQuestV2 then      
                     task.wait(1)      
                     continue      
                 end      
             end      
-              
+
             -- ถ้ามีเควสต์แล้ว ให้ไปหามอนสเตอร์      
-            if _G.hasTeleportQuest and not _G.isTeleportRespawning then      
+            if _G.hasActiveQuestV2 and not _G.isRespawningV2 then      
                 -- ค้นหามอนสเตอร์      
-                local target = findTeleportTargetMonster()      
-              
+                local target = findTargetMonsterV2()      
+
                 if target then      
                     local targetPart = target:FindFirstChild("HumanoidRootPart") or target.PrimaryPart      
                     if targetPart and chr and chr:FindFirstChild("HumanoidRootPart") then      
@@ -587,64 +586,34 @@ TeleportToggle:OnChanged(function(state)
         end
     end
 
-    -- เช็ค level ก่อนเริ่มทำงาน
-    local function checkLevelAndTeleport()
-        while _G.isTeleportFarming do
-            -- ตรวจสอบเลเวลปัจจุบัน
-            local level = localPlayer:FindFirstChild("Level") and localPlayer.Level.Value or 0
-            
-            if level >= 400 then
-                -- ถ้า level >= 400 และชื่อเกมไม่ใช่ "BizBlox (Rework) - Italy"
-                if game.Name ~= "BizBlox (Rework) - Italy" then
-                    local TeleportService = game:GetService("TeleportService")
-                    local PlaceId = 93140024895832  -- ID ของสถานที่ใหม่ที่ต้องการย้ายไป
-                    
-                    -- พยายามย้ายตัวเองไปยังเซิร์ฟเวอร์ใหม่
-                    pcall(function()
-                        TeleportService:Teleport(PlaceId)
-                    end)
-                end
-            end
-            
-            task.wait(30) -- ตรวจสอบทุก 30 วินาที
-        end
-    end
-
     -- ถ้าเปิด Toggle ให้รัน
     if state then
-        _G.isTeleportFarming = true
-        _G.hasTeleportQuest = false
-        _G.isTeleportRespawning = false
+        _G.isAutoFarmingV2 = true
+        _G.hasActiveQuestV2 = false
+        _G.isRespawningV2 = false
 
         -- เริ่มการติดตามเมื่อผู้เล่นตาย    
-        table.insert(_G.teleportFarmTasks, task.spawn(checkTeleportPlayerDeath))    
-        
-        -- เริ่มการเช็คเลเวลและย้ายเซิร์ฟเวอร์    
-        table.insert(_G.teleportFarmTasks, task.spawn(checkLevelAndTeleport))    
+        table.insert(_G.autoFarmTasksV2, task.spawn(checkPlayerDeathV2))    
 
         -- ใช้เพียง task เดียวในการทำงานทั้งหมด      
-        table.insert(_G.teleportFarmTasks, task.spawn(teleportMainFarmLoop))
-        
+        table.insert(_G.autoFarmTasksV2, task.spawn(mainFarmLoopV2))    
+
         -- เพิ่ม Event Handler สำหรับการเกิดใหม่    
-        local teleportCharacterAddedConnection
-        teleportCharacterAddedConnection = localPlayer.CharacterAdded:Connect(function(newCharacter)    
-            if not _G.isTeleportFarming then    
-                teleportCharacterAddedConnection:Disconnect()    
+        local characterAddedConnection    
+        characterAddedConnection = localPlayer.CharacterAdded:Connect(function(newCharacter)    
+            if not _G.isAutoFarmingV2 then    
+                characterAddedConnection:Disconnect()    
                 return    
             end    
-            
+
             chr = newCharacter
-            task.wait(3) -- รอให้ตัวละครโหลดเสร็จสมบูรณ์
-            _G.isTeleportRespawning = false
         end)
-        
-        -- เก็บ connection ไว้เพื่อยกเลิกเมื่อปิด toggle
-        table.insert(_G.teleportFarmTasks, teleportCharacterAddedConnection)
     else
-        stopAllTasks() -- ถ้าปิด Toggle ให้หยุดทุก task ทันที
+        stopAllTasksV2()  -- หยุดการทำงานทั้งหมดของโค้ดที่ 2 เมื่อปิด Toggle
     end
 end)
     
+    Options.AutoFarmV2:SetValue(false)
     
     -- สร้างตัวแปร global สำหรับ AutoClick
     _G.autoClickEnabled = false
