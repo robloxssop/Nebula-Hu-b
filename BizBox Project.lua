@@ -1,9 +1,9 @@
-local gameName = game:GetService("MarketplaceService"):GetProductInfo(game.PlaceId).Name
+local placeId = game.PlaceId
 
-if gameName == "BizBlox (Rework) The Sun, Hermit Purple" then
-    loadstring(game:HttpGet("https://raw.githubusercontent.com/robloxssop/Nebula-Hu-b/refs/heads/main/%E0%B8%8A.lua"))()
-elseif mapName == "BizBlox (Rework) - Italy" then
-    loadstring(game:HttpGet("https://raw.githubusercontent.com/robloxssop/Nebula-HUB/refs/heads/main/Bizbox.lua"))()
+if placeId == 123456789 then  -- ใส่ PlaceId ของแมพที่ชื่อ B
+    loadstring(game:HttpGet("https://raw.githubusercontent.com/robloxssop/Dexexl/refs/heads/main/71017572336194.lua"))()
+elseif placeId == 987654321 then  -- ใส่ PlaceId ของแมพที่ชื่อ A
+    loadstring(game:HttpGet(""))()
 else
     print("Map not recognized!")
 end
